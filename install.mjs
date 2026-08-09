@@ -53,8 +53,31 @@ for (const d of candidates) {
   try { symlinkSync(launcher, target); linked = target; break; } catch {}
 }
 
-if (linked) console.log(`Linked: ${linked}`);
-else if (win) console.log(`Add this to your PATH:\n  ${DEST}`);
+// Nothing writable on PATH. Rather than leaving the user with a tool they
+// cannot type the name of, make the conventional directory and say the one
+// line they need. Silence here is what turns a working install into a
+// support question.
+if (!linked && !win) {
+  const fallback = join(homedir(), '.local/bin');
+  try {
+    mkdirSync(fallback, { recursive: true });
+    const target = join(fallback, 'behalf');
+    try { unlinkSync(target); } catch {}
+    symlinkSync(launcher, target);
+    linked = target;
+  } catch {}
+}
+
+const onPath = linked && (process.env.PATH || '').split(':').includes(dirname(linked));
+if (linked && onPath) console.log(`Linked: ${linked}`);
+else if (linked) {
+  const shell = (process.env.SHELL || '').split('/').pop();
+  const rc = shell === 'zsh' ? '~/.zshrc' : shell === 'bash' ? '~/.bashrc' : 'your shell profile';
+  console.log(`Linked: ${linked}`);
+  console.log(`\nThat directory is not on your PATH yet. Add this line to ${rc}:`);
+  console.log(`  export PATH="${dirname(linked)}:$PATH"`);
+  console.log(`Then open a new terminal, or run it now with:\n  ${linked} doctor`);
+} else if (win) console.log(`Add this to your PATH:\n  ${DEST}`);
 else console.log(`Could not link automatically. Add this to your shell profile:\n  export PATH="${DEST}:$PATH"`);
 
 console.log('\nChecking your setup:');

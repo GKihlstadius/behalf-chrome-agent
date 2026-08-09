@@ -323,7 +323,7 @@ footer a{color:var(--tyst)}
 <section id="kop">
   <h3>Get it</h3>
   <h2>Free, MIT, and small enough to read.</h2>
-  <pre class="term"><span class="p">$</span> git clone https://github.com/GKihlstadius/behalf<br><span class="p">$</span> cd behalf &amp;&amp; ./install.sh</pre>
+  <pre class="term"><span class="p">$</span> git clone https://github.com/GKihlstadius/behalf-chrome-agent<br><span class="p">$</span> cd behalf &amp;&amp; ./install.sh</pre>
   <ul class="check">
     <li>The command line tool, 681 lines of readable source</li>
     <li>Adapters for Claude Code, Codex, Cursor and Zed</li>
@@ -332,7 +332,7 @@ footer a{color:var(--tyst)}
   </ul>
   <p style="margin-top:24px;font-size:15px;color:#8b8f98">macOS, Linux and Windows. Requires Node 22+ and Google Chrome.
   No dependencies, nothing downloaded at install time.</p>
-  <div class="knappar"><a class="kop" href="https://github.com/GKihlstadius/behalf">Get it on GitHub</a>
+  <div class="knappar"><a class="kop" href="https://github.com/GKihlstadius/behalf-chrome-agent">Get it on GitHub</a>
   <a class="sekundar" href="#stod">Buy me a coffee</a></div>
   <p style="margin-top:20px;font-size:14px;color:#6f737c">It is free because the alternatives are free.
   If it saved you an afternoon, a coffee is welcome and entirely optional.</p>
@@ -360,7 +360,7 @@ footer a{color:var(--tyst)}
 
 <footer>
   <p style="color:#8b8f98">behalf, built in Sweden, while filing an actual tax return.<br>
-  MIT licensed. <a href="https://github.com/GKihlstadius/behalf">Source on GitHub</a>
+  MIT licensed. <a href="https://github.com/GKihlstadius/behalf-chrome-agent">Source on GitHub</a>
   &middot; <a href="#stod">Buy me a coffee</a></p>
 </footer>
 </div>
@@ -378,6 +378,18 @@ footer a{color:var(--tyst)}
 
   const mjuk = matchMedia('(prefers-reduced-motion: reduce)');
   if (mjuk.matches) { video.loop = true; video.play().catch(() => {}); return; }
+
+  // En video gar bara att skrubba i om servern svarar pa Range-forfragningar.
+  // python3 -m http.server gor inte det: den svarar 200 med hela filen och utan
+  // accept-ranges, sa video.seekable blir tom och hjalten fryser pa forsta
+  // bildrutan utan ett enda felmeddelande. Da ar en slinga battre an en sida
+  // som ser trasig ut. Anvand "npx serve" for lokal forhandsgranskning.
+  video.addEventListener('loadeddata', () => {
+    if (!video.seekable.length || video.seekable.end(0) < 0.5) {
+      video.loop = true;
+      video.play().catch(() => {});
+    }
+  });
 
   let mal = 0, nu = 0, kor = false, langd = 0;
 
