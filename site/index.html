@@ -161,6 +161,16 @@ ul.check li:before{content:"→";position:absolute;left:0;color:var(--accent)}
 .demo figcaption{margin-top:14px;font-size:14px;color:var(--tyst);font-family:var(--mono)}
 footer{padding:64px 0 80px;border-top:1px solid var(--linje);color:var(--tyst);font-size:14px}
 footer a{color:var(--tyst)}
+.stod{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:30px}
+.mynt{border:1px solid var(--linje);border-radius:9px;padding:14px 16px;background:rgba(255,255,255,.015)}
+.mynt b{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.mynt i{display:block;font-style:normal;font-size:11.5px;color:var(--tyst);margin-bottom:9px}
+.mynt .rad{display:flex;gap:8px;align-items:center}
+.mynt code{flex:1;font-family:var(--mono);font-size:11.5px;color:#b8bcc4;word-break:break-all;line-height:1.45}
+.kopiera{flex-shrink:0;background:none;border:1px solid var(--linje);color:var(--tyst);border-radius:5px;
+         padding:5px 9px;font-size:11px;cursor:pointer;font-family:var(--mono)}
+.kopiera:hover{color:var(--text);border-color:#3a3d44}
+.kopiera.klar{color:var(--accent);border-color:var(--accent)}
 @media(max-width:640px){ .duk{padding:22px 20px;min-height:250px} .term{font-size:12px} section{padding:76px 0} }
 </style>
 
@@ -323,15 +333,35 @@ footer a{color:var(--tyst)}
   <p style="margin-top:24px;font-size:15px;color:#8b8f98">macOS, Linux and Windows. Requires Node 22+ and Google Chrome.
   No dependencies, nothing downloaded at install time.</p>
   <div class="knappar"><a class="kop" href="https://github.com/GKihlstadius/behalf">Get it on GitHub</a>
-  <a class="sekundar" href="https://github.com/sponsors/GKihlstadius">Buy me a coffee</a></div>
+  <a class="sekundar" href="#stod">Buy me a coffee</a></div>
   <p style="margin-top:20px;font-size:14px;color:#6f737c">It is free because the alternatives are free.
   If it saved you an afternoon, a coffee is welcome and entirely optional.</p>
+</section>
+
+<section id="stod">
+  <h3>Support</h3>
+  <h2>Free, and staying that way.</h2>
+  <p>behalf is MIT licensed and costs nothing, because the alternatives cost nothing.
+  If it saved you an afternoon, there is a coffee fund. It is entirely optional and
+  nothing is gated behind it.</p>
+  <div class="stod">
+    <div class="mynt"><b>Bitcoin</b><i>BTC, native SegWit</i>
+      <div class="rad"><code>bc1qf0aw36judg5qzjrf365rp9nq04nav5da8jjxzx</code><button class="kopiera">copy</button></div></div>
+    <div class="mynt"><b>Ethereum</b><i>ERC-20</i>
+      <div class="rad"><code>0x9869799157186227bA3Cc980bAE3C64E022453a0</code><button class="kopiera">copy</button></div></div>
+    <div class="mynt"><b>BNB Smart Chain</b><i>BEP-20, same address, different network</i>
+      <div class="rad"><code>0x9869799157186227bA3Cc980bAE3C64E022453a0</code><button class="kopiera">copy</button></div></div>
+    <div class="mynt"><b>Solana</b><i>SOL</i>
+      <div class="rad"><code>DZ8Sh5rXDsnFL9G6WUYuJ6dELyHzKByWxKurGLY5Pt22</code><button class="kopiera">copy</button></div></div>
+  </div>
+  <p style="margin-top:20px;font-size:13.5px;color:#6f737c">Ethereum and BNB Smart Chain share one
+  address but are separate networks. Send on the network you picked, or the funds are gone.</p>
 </section>
 
 <footer>
   <p style="color:#8b8f98">behalf, built in Sweden, while filing an actual tax return.<br>
   MIT licensed. <a href="https://github.com/GKihlstadius/behalf">Source on GitHub</a>
-  &middot; <a href="https://github.com/sponsors/GKihlstadius">Buy me a coffee</a></p>
+  &middot; <a href="#stod">Buy me a coffee</a></p>
 </footer>
 </div>
 
@@ -394,4 +424,37 @@ footer a{color:var(--tyst)}
     }
   }, { threshold: 0.35 }).observe(v);
 })();
+</script>
+
+<script>
+// Ingen skriver av en 42-teckensadress for hand.
+//
+// Den asynkrona clipboard-API:n HANGER i vantan pa behorighet i stallet for att
+// avvisas, sa ett await pa den nar aldrig raden som ger aterkoppling. Knappen
+// ser trasig ut for alla vars webblasare fragar om lov. Darfor kopieras det
+// synkront med execCommand forst, vilket alltid gar igenom pa ett anvandarklick,
+// och den moderna API:n far bara vara en tyst forbattring.
+function kopieraText (text) {
+  const ruta = document.createElement('textarea');
+  ruta.value = text;
+  ruta.setAttribute('readonly', '');
+  ruta.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+  document.body.appendChild(ruta);
+  ruta.select();
+  ruta.setSelectionRange(0, text.length);
+  let gick = false;
+  try { gick = document.execCommand('copy'); } catch (e) { /* aldre webblasare */ }
+  ruta.remove();
+  if (!gick && navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+  return gick;
+}
+
+document.querySelectorAll('.kopiera').forEach(knapp => {
+  knapp.addEventListener('click', () => {
+    kopieraText(knapp.previousElementSibling.textContent.trim());
+    knapp.textContent = 'copied';
+    knapp.classList.add('klar');
+    setTimeout(() => { knapp.textContent = 'copy'; knapp.classList.remove('klar'); }, 1600);
+  });
+});
 </script>

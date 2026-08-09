@@ -1,5 +1,7 @@
 # behalf
 
+**[behalf-cli.vercel.app](https://behalf-cli.vercel.app)**
+
 Your agent has eyes. This gives it hands, in the browser you are already
 signed in to.
 
@@ -123,5 +125,17 @@ able to read all of it in an evening is a feature.
 
 MIT. Use it, change it, ship it.
 
-If it saved you an afternoon, [sponsoring](https://github.com/sponsors/GKihlstadius)
-is welcome and entirely optional.
+## Support
+
+behalf is free and staying that way. Nothing is gated. If it saved you an
+afternoon, there is a coffee fund.
+
+```
+Bitcoin           bc1qf0aw36judg5qzjrf365rp9nq04nav5da8jjxzx
+Ethereum ERC-20   0x9869799157186227bA3Cc980bAE3C64E022453a0
+BNB Chain BEP-20  0x9869799157186227bA3Cc980bAE3C64E022453a0
+Solana            DZ8Sh5rXDsnFL9G6WUYuJ6dELyHzKByWxKurGLY5Pt22
+```
+
+Ethereum and BNB Smart Chain share one address but are separate networks. Send
+on the network you picked, or the funds are gone.
