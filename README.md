@@ -73,6 +73,8 @@ behalf doctor
 
 ## One finding worth your time even if you never install this
 
+_Written up properly: [Chrome silently drops synthetic mouse clicks into unfocused pages](https://behalf-cli.vercel.app/focus)_
+
 **Chrome silently drops synthetic mouse clicks into a page it considers unfocused.**
 
 Your terminal has the OS focus, not the browser. After the first navigation the
