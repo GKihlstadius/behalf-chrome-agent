@@ -23,7 +23,7 @@ cd behalf && ./install.sh
 ```
 
 Node 22 or newer and Google Chrome. macOS, Linux and Windows. No dependencies,
-no build step, nothing downloaded at install time. 669 lines of plain JavaScript
+no build step, nothing downloaded at install time. 681 lines of plain JavaScript
 you can read in an evening.
 
 Then copy the one small file your agent host needs from [`adapters/`](adapters/).
