@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>behalf, your agent, in your browser, on your behalf</title>
+<meta name="description" content="Give your AI agent hands in the browser you're already logged into. Not a sandbox. Your real session.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bak:#0b0c0e; --bak2:#111318; --linje:#22252c;
+  --text:#e8e6e1; --tyst:#8b8f98; --accent:#d9ff4a; --varning:#ff7a59;
+  --serif:"Instrument Serif",Georgia,serif;
+  --sans:"Inter",-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bak);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.65;
+     -webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden}
+
+/* Norrsken: stora suddiga gradienter som driver langsamt. Samma grepp som
+   motionsites, byggt i CSS sa det laddar direkt och skalar utan artefakter. */
+.sken{position:fixed;inset:-25% -15% auto -15%;height:110vh;pointer-events:none;z-index:0;
+      filter:blur(72px) saturate(1.25);opacity:1}
+.sken i{position:absolute;display:block;border-radius:50%;mix-blend-mode:screen}
+.sken .a{width:58vw;height:44vw;right:-4vw;top:2vh;
+         background:radial-gradient(ellipse,rgba(217,255,74,.52),rgba(217,255,74,.10) 52%,transparent 72%);
+         animation:drift1 26s ease-in-out infinite alternate}
+.sken .b{width:62vw;height:48vw;right:10vw;top:-6vh;
+         background:radial-gradient(ellipse,rgba(58,110,255,.62),rgba(58,110,255,.14) 50%,transparent 70%);
+         animation:drift2 34s ease-in-out infinite alternate}
+.sken .c{width:40vw;height:34vw;right:30vw;top:12vh;
+         background:radial-gradient(ellipse,rgba(255,138,79,.40),transparent 66%);
+         animation:drift3 42s ease-in-out infinite alternate}
+.sken .d{width:34vw;height:30vw;right:-8vw;top:26vh;
+         background:radial-gradient(ellipse,rgba(168,85,247,.34),transparent 68%);
+         animation:drift1 30s ease-in-out infinite alternate-reverse}
+@keyframes drift1{to{transform:translate3d(-6vw,4vh,0) scale(1.16)}}
+@keyframes drift2{to{transform:translate3d(5vw,7vh,0) scale(.9)}}
+@keyframes drift3{to{transform:translate3d(-4vw,-4vh,0) scale(1.22)}}
+@media(prefers-reduced-motion:reduce){ .sken i{animation:none} }
+/* mork botten sa texten alltid har kontrast mot skenet */
+.dimma{position:fixed;inset:0;pointer-events:none;z-index:0;
+       background:radial-gradient(ellipse 90% 62% at 22% 34%,rgba(11,12,14,.94),rgba(11,12,14,.55) 55%,transparent 78%)}
+.wrap{position:relative;z-index:1}
+.wrap{max-width:1040px;margin:0 auto;padding:0 28px}
+section{padding:110px 0;border-top:1px solid var(--linje)}
+section.hero{border-top:0}
+section:first-of-type{border-top:0}
+
+h1{font-family:var(--serif);font-size:clamp(46px,7.5vw,92px);line-height:1.02;letter-spacing:-.02em;font-weight:400}
+h1 em{font-style:italic;color:var(--accent)}
+h2{font-family:var(--serif);font-size:clamp(30px,4.2vw,46px);line-height:1.1;font-weight:400;letter-spacing:-.01em;margin-bottom:20px}
+h3{font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tyst);margin-bottom:14px}
+p{max-width:62ch;color:#c9c7c2}
+p+p{margin-top:16px}
+.lead{font-size:20px;color:var(--tyst);margin-top:26px;max-width:56ch}
+.etikett{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+
+/* ---- Hero med avslöjning: två identiskt positionerade lager ---- */
+.hero-scroll{position:relative;height:320vh;border:0;padding:0;margin:0}
+.hero{position:sticky;top:0;height:100svh;display:flex;align-items:center;
+      padding:0;margin:0;border:0;overflow:hidden;isolation:isolate}
+.rulla{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:5;
+       font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+       color:var(--tyst);display:flex;flex-direction:column;align-items:center;gap:9px;
+       transition:opacity .4s}
+.rulla span{width:1px;height:34px;background:linear-gradient(var(--accent),transparent);
+            animation:falla 2.2s ease-in-out infinite}
+@keyframes falla{0%{transform:scaleY(.2);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}
+                 51%{transform-origin:bottom}100%{transform:scaleY(.2);transform-origin:bottom}}
+@media(prefers-reduced-motion:reduce){ .rulla span{animation:none} .hero-scroll{height:auto} .hero{position:relative} }
+.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+/* skuggan halller texten lasbar mot bilden utan att doda ljuset till hoger */
+.hero .skugga{position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:linear-gradient(100deg,rgba(11,12,14,.97) 0%,rgba(11,12,14,.93) 30%,rgba(11,12,14,.66) 50%,rgba(11,12,14,.2) 74%,rgba(11,12,14,.05) 100%)}
+.hero-text{position:relative;z-index:4;max-width:1040px;margin:0 auto;padding:0 28px;width:100%}
+.hero-text .lead{max-width:46ch}
+.hero .hint{display:none}
+.scen{position:relative;perspective:1400px}
+.plan{position:absolute;left:50%;top:78%;width:150%;height:120%;z-index:0;transform:translate(-50%,-50%) rotateX(64deg);
+      background:
+        linear-gradient(to right,transparent 0 49.6%,rgba(217,255,74,.30) 49.6% 50.4%,transparent 50.4%) 0 0/78px 78px,
+        linear-gradient(to bottom,transparent 0 49.6%,rgba(217,255,74,.30) 49.6% 50.4%,transparent 50.4%) 0 0/78px 78px;
+      -webkit-mask-image:radial-gradient(ellipse 60% 52% at 50% 42%,#000,transparent 74%);
+      mask-image:radial-gradient(ellipse 60% 52% at 50% 42%,#000,transparent 74%);
+      pointer-events:none;opacity:.6}
+.avsloj{position:relative;margin-top:56px;border:1px solid var(--linje);border-radius:10px;overflow:hidden;
+        cursor:crosshair;background:var(--bak2);user-select:none}
+.avsloj.bild{aspect-ratio:16/9;border-color:#1b1e25}
+.avsloj.bild img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.avsloj.bild .botten{z-index:0}
+.avsloj.bild .topp{z-index:1}
+.lager{display:grid;grid-template-rows:34px 1fr}
+.chrome{display:flex;align-items:center;gap:7px;padding:0 13px;background:#191c22;border-bottom:1px solid var(--linje)}
+.prick{width:10px;height:10px;border-radius:50%;background:#3a3f49}
+.adress{margin-left:12px;font-family:var(--mono);font-size:11px;color:var(--tyst)}
+.duk{padding:30px 32px;min-height:290px}
+
+/* masken följer musen, samma teknik som Viktors bildavslöjning,
+   men med mjuk kant så den läses som en lins och inte som textfel */
+.lager2{-webkit-mask-image:radial-gradient(circle var(--r,0px) at var(--x,50%) var(--y,50%),#000 45%,rgba(0,0,0,.55) 78%,transparent 100%);
+        mask-image:radial-gradient(circle var(--r,0px) at var(--x,50%) var(--y,50%),#000 45%,rgba(0,0,0,.55) 78%,transparent 100%)}
+/* ringen gör linsen till ett föremål man ser, inte en glitch */
+.lins{position:absolute;pointer-events:none;border-radius:50%;
+      left:var(--x,50%);top:var(--y,50%);width:calc(var(--r,0px)*2);height:calc(var(--r,0px)*2);
+      transform:translate(-50%,-50%);
+      box-shadow:0 0 0 1px rgba(217,255,74,.28), 0 0 44px rgba(217,255,74,.09) inset;
+      opacity:calc(var(--r,0px)/190)}
+
+/* lager 1: myndighetsformuläret */
+.falt{margin-bottom:18px}
+.falt label{display:block;font-size:12px;color:var(--tyst);margin-bottom:5px}
+.falt .ruta{border:1px solid #2c313a;border-radius:5px;padding:9px 12px;font-size:14px;color:#aeb2ba;background:#0e1116}
+.knapp-form{margin-top:22px;display:inline-block;background:#2b6cb0;color:#fff;padding:9px 20px;border-radius:5px;font-size:14px}
+.formrub{font-size:19px;margin-bottom:22px;color:#dcdad5}
+
+/* lager 2: kommandona */
+.term{font-family:var(--mono);font-size:13.5px;line-height:1.95}
+.term .p{color:var(--accent)}
+.term .k{color:#e8e6e1}
+.term .s{color:var(--tyst)}
+.hint{position:absolute;right:14px;bottom:12px;font-family:var(--mono);font-size:11px;color:var(--tyst);
+      background:rgba(11,12,14,.85);padding:5px 10px;border-radius:20px;border:1px solid var(--linje);pointer-events:none}
+
+.knappar{display:flex;gap:14px;flex-wrap:wrap;margin-top:40px;align-items:center}
+.kop{background:var(--accent);color:#0b0c0e;padding:14px 28px;border-radius:7px;font-weight:600;text-decoration:none;font-size:16px}
+.kop:hover{filter:brightness(1.08)}
+.sekundar{color:var(--tyst);text-decoration:none;border-bottom:1px solid var(--linje);padding-bottom:2px;font-size:15px}
+.sekundar:hover{color:var(--text)}
+
+.rutnat{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1px;background:var(--linje);
+        border:1px solid var(--linje);border-radius:10px;overflow:hidden;margin-top:44px}
+.kort{background:var(--bak);padding:30px 26px}
+.kort .n{font-family:var(--mono);font-size:12px;color:var(--accent);margin-bottom:12px}
+.kort p{font-size:15px;color:var(--tyst)}
+
+table{width:100%;border-collapse:collapse;margin-top:40px;font-size:15px}
+th,td{text-align:left;padding:15px 14px;border-bottom:1px solid var(--linje);vertical-align:top}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--tyst);font-weight:600}
+td.oss{color:var(--accent)}
+tbody tr:hover{background:#0f1116}
+
+.kod{background:var(--bak2);border:1px solid var(--linje);border-radius:9px;padding:24px 26px;
+     font-family:var(--mono);font-size:13.5px;line-height:2;margin-top:32px;overflow-x:auto}
+.kod .p{color:var(--accent)}
+.kod .s{color:var(--tyst)}
+
+.pris{display:flex;align-items:baseline;gap:12px;margin:8px 0 4px}
+.pris b{font-family:var(--serif);font-size:64px;font-weight:400}
+.pris span{color:var(--tyst)}
+ul.check{list-style:none;margin-top:24px}
+ul.check li{padding-left:26px;position:relative;margin-bottom:11px;color:#c9c7c2;font-size:15.5px}
+ul.check li:before{content:"→";position:absolute;left:0;color:var(--accent)}
+
+.demo{margin:44px 0 0}
+.demo video{width:100%;display:block;border:1px solid var(--linje);border-radius:11px;
+            background:#0b0c0e;box-shadow:0 30px 90px rgba(0,0,0,.55)}
+.demo figcaption{margin-top:14px;font-size:14px;color:var(--tyst);font-family:var(--mono)}
+footer{padding:64px 0 80px;border-top:1px solid var(--linje);color:var(--tyst);font-size:14px}
+footer a{color:var(--tyst)}
+@media(max-width:640px){ .duk{padding:22px 20px;min-height:250px} .term{font-size:12px} section{padding:76px 0} }
+</style>
+
+<div class="sken"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i></div>
+<div class="dimma"></div>
+
+<section class="hero-scroll" id="heroScroll">
+  <div class="hero" id="avsloj">
+    <video class="hero-video" id="heroVideo" muted playsinline preload="auto"
+           poster="assets/hero-poster.jpg" aria-hidden="true">
+      <source src="assets/hero-scrub.mp4" type="video/mp4">
+    </video>
+    <div class="skugga"></div>
+
+    <div class="hero-text" id="heroText">
+      <div class="etikett">behalf.sh</div>
+      <h1>Your agent has eyes.<br>Give it <em>hands</em>.</h1>
+      <p class="lead">Not a fresh sandbox with no cookies. The browser you are already
+      logged into. Every dashboard, every portal, everything behind a password you
+      already know.</p>
+      <div class="knappar">
+        <a class="kop" href="#kop">Get behalf, 99 kr</a>
+        <a class="sekundar" href="#hur">See how it works</a>
+      </div>
+    </div>
+
+    <div class="rulla" id="rulla"><span></span>scroll</div>
+  </div>
+</section>
+
+<div class="wrap">
+
+
+<section id="hur">
+  <h3>The problem</h3>
+  <h2>Every tool that can click starts a browser that knows nothing about you.</h2>
+  <p>Screenshots and DOM dumps let an agent read the web. Clicking is the easy part.
+  The hard part is that automation frameworks spawn a clean browser: no cookies, no
+  sessions, no BankID, no logged-in state.</p>
+  <p>So the agent can browse the public web, and nothing else. The moment the work
+  actually matters, whether that is your accounting system, your bank or a government
+  portal, it is locked out at the login screen.</p>
+  <p><strong>behalf attaches to the browser you already use.</strong> Separate profile,
+  your real logins, one port you open and close yourself.</p>
+
+  <div class="rutnat">
+    <div class="kort"><div class="n">19 commands</div>
+      <p>open, read, wait, click, fill, upload, shot, pdf, eval. One line each. No SDK, no boilerplate.</p></div>
+    <div class="kort"><div class="n">Any agent</div>
+      <p>It is a CLI. Claude Code, Codex, Cursor, Zed, a local model, anything that can run a shell command.</p></div>
+    <div class="kort"><div class="n">Zero install</div>
+      <p>Uses the Chrome you have and Node's built-in WebSocket. No 300 MB browser download, no dependencies.</p></div>
+  </div>
+</section>
+
+<section>
+  <h3>What it looks like</h3>
+  <h2>The whole API is a command line.</h2>
+  <div class="kod">
+<span class="s"># start the controlled browser, auto-closes after 90 min</span><br>
+<span class="p">$</span> behalf start 90<br><br>
+<span class="p">$</span> behalf open fortnox.se/import<br>
+<span class="p">$</span> behalf frames<br>
+<span class="s">&nbsp;&nbsp;34 chars of text   [app] about:blank</span><br>
+<span class="p">$</span> behalf upload sieFile bokforing-2026.se --frame *<br>
+<span class="p">$</span> behalf click "Importera" --frame *<br>
+<span class="p">$</span> behalf wait "16 verifikat"<br>
+<span class="s">&nbsp;&nbsp;hittad efter 2 140 ms</span><br><br>
+<span class="p">$</span> behalf stop
+  </div>
+  <p style="margin-top:26px">That sequence is real. It imported a year of bookkeeping into
+  Fortnox, sixteen entries, balanced to the öre, verified against the bank statement.</p>
+</section>
+
+<section>
+  <h3>Proof</h3>
+  <h2>It filed a real tax return.</h2>
+  <p>Not a demo account. A live Swedish corporate income tax filing, on the
+  authority's own portal, in a session authenticated with a national eID.</p>
+  <p>It navigated a portal that renders inside web components, filled a form that
+  ignored synthetic clicks and required real mouse events, uploaded two structured
+  data files whose names had to match exactly, and came back with a receipt number.</p>
+  <p>Then it imported a year of bookkeeping into Fortnox. Sixteen entries, balanced
+  to the öre, reconciled against the bank statement.</p>
+  <p><strong>Every trap in that sentence is documented in the field manual.</strong>
+  That is the part worth having: not the six hundred lines that send the click,
+  but the knowledge of which click to send.</p>
+</section>
+
+<section id="demo">
+  <h3>Watch it</h3>
+  <h2>Eighteen seconds, one real session.</h2>
+  <p>No cuts, no reenactment. The terminal on the left is driving the browser on
+  the right, in a session that was already signed in.</p>
+
+  <figure class="demo">
+    <video id="demoVideo" muted loop playsinline preload="metadata"
+           poster="assets/demo-poster.jpg" controls>
+      <source src="assets/demo.mp4" type="video/mp4">
+    </video>
+    <figcaption>behalf driving Gemini to generate the image at the top of this page.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h3>Compared</h3>
+  <h2>Most of this field is free. Here is where behalf actually differs.</h2>
+  <p>Google, Microsoft and Vercel all give away tools that drive your logged-in
+  Chrome, and they are good. behalf is free too. The honest reasons to pick it are
+  the size of the context it costs you and the size of the code you have to trust.</p>
+  <table>
+    <thead><tr><th>&nbsp;</th><th>chrome-devtools-mcp</th><th>agent-browser</th><th class="oss">behalf</th></tr></thead>
+    <tbody>
+      <tr><td>From</td><td>Google</td><td>Vercel Labs</td><td class="oss">One developer and a tax return</td></tr>
+      <tr><td>Shape</td><td>MCP server, 29 tools</td><td>Rust CLI, 50+ commands</td><td class="oss">CLI, 19 commands</td></tr>
+      <tr><td>Context cost, every request</td><td>~6,600 tokens of schema</td><td>None, it is a CLI</td><td class="oss">~400 tokens, one rule file</td></tr>
+      <tr><td>Your logged-in session</td><td>Yes, via browser url</td><td>Yes, via CDP</td><td class="oss">Yes, separate profile</td></tr>
+      <tr><td>Port lifecycle</td><td>You manage it</td><td>Daemon persists</td><td class="oss">Random port, closes itself</td></tr>
+      <tr><td>Auditable</td><td>Large</td><td>Rust binary</td><td class="oss">669 lines you can read tonight</td></tr>
+      <tr><td>Licence</td><td>Apache-2.0</td><td>Apache-2.0</td><td class="oss">MIT</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:26px;font-size:15px;color:#8b8f98">Measured, not claimed: chrome-devtools-mcp
+  reports 29 tools totalling 23,244 characters of JSON schema, which is roughly 6,600 tokens paid on
+  every message whether or not the browser is involved.</p>
+</section>
+
+<section>
+  <h3>Trust</h3>
+  <h2>This tool can act as you. Read it before you run it.</h2>
+  <p>behalf can file your tax return, move money in your accounting system and act
+  in your name on a government portal. That is the point, and it is also the risk.</p>
+  <p>So it is built to be inspected. The entire tool is 669 lines of plain
+  JavaScript. No dependencies, no build step, no minification, no telemetry, no
+  network calls except to the browser on your own machine.</p>
+  <p>It ships with its own test suite: 51 checks that drive a real Chrome against a
+  local fixture, plus unit tests for the parts that differ per operating system.
+  Run them before you trust it.</p>
+  <ul class="check">
+    <li>Random port, bound to 127.0.0.1, never reachable from the network</li>
+    <li>Separate Chrome profile, your everyday browser is untouched</li>
+    <li><code>behalf stop</code> closes the port. Nothing runs in the background</li>
+    <li>Auto-shutdown timer so a forgotten session cannot stay open overnight</li>
+  </ul>
+  <p style="margin-top:26px"><strong>CDP has no authentication.</strong> Any process running
+  as you can reach an open port. behalf makes the window small and explicit rather than
+  pretending the problem does not exist.</p>
+</section>
+
+<section id="kop">
+  <h3>Get it</h3>
+  <h2>Free, MIT, and small enough to read.</h2>
+  <pre class="term"><span class="p">$</span> git clone https://github.com/GKihlstadius/behalf<br><span class="p">$</span> cd behalf &amp;&amp; ./install.sh</pre>
+  <ul class="check">
+    <li>The command line tool, 669 lines of readable source</li>
+    <li>Adapters for Claude Code, Codex, Cursor and Zed</li>
+    <li>The field manual with every trap we hit and how to get past it</li>
+    <li>The test suite, so you can verify it yourself</li>
+  </ul>
+  <p style="margin-top:24px;font-size:15px;color:#8b8f98">macOS, Linux and Windows. Requires Node 22+ and Google Chrome.
+  No dependencies, nothing downloaded at install time.</p>
+  <div class="knappar"><a class="kop" href="https://github.com/GKihlstadius/behalf">Get it on GitHub</a>
+  <a class="sekundar" href="https://github.com/sponsors/GKihlstadius">Buy me a coffee</a></div>
+  <p style="margin-top:20px;font-size:14px;color:#6f737c">It is free because the alternatives are free.
+  If it saved you an afternoon, a coffee is welcome and entirely optional.</p>
+</section>
+
+<footer>
+  <p style="color:#8b8f98">behalf, built in Sweden, while filing an actual tax return.<br>
+  MIT licensed. <a href="https://github.com/GKihlstadius/behalf">Source on GitHub</a>
+  &middot; <a href="https://github.com/sponsors/GKihlstadius">Buy me a coffee</a></p>
+</footer>
+</div>
+
+<script>
+// Scrollstyrd video. Sektionen ar 320vh hog och innehallet klibbar, sa
+// scrollstrackan blir tidslinjen. Videon ar omkodad med nyckelruta pa varje
+// bildruta, annars hoppar sokningen till narmaste nyckelruta och det hackar.
+(() => {
+  const sek   = document.getElementById('heroScroll');
+  const video = document.getElementById('heroVideo');
+  const text  = document.getElementById('heroText');
+  const rulla = document.getElementById('rulla');
+  if (!sek || !video) return;
+
+  const mjuk = matchMedia('(prefers-reduced-motion: reduce)');
+  if (mjuk.matches) { video.loop = true; video.play().catch(() => {}); return; }
+
+  let mal = 0, nu = 0, kor = false, langd = 0;
+
+  video.addEventListener('loadedmetadata', () => { langd = video.duration || 6; });
+
+  function progress () {
+    const r = sek.getBoundingClientRect();
+    const strack = sek.offsetHeight - innerHeight;
+    return strack <= 0 ? 0 : Math.min(1, Math.max(0, -r.top / strack));
+  }
+
+  function rita () {
+    // Lerp i stallet for direkt hopp. Sokning ar dyrt, och utan utjamning
+    // kanns varje scrollhack som ett ryck i bilden.
+    nu += (mal - nu) * 0.12;
+    if (langd) {
+      const tid = nu * (langd - 0.05);
+      if (Math.abs(video.currentTime - tid) > 0.008) video.currentTime = tid;
+    }
+    // texten lamnar scenen nar ljuset tar over
+    const bort = Math.max(0, (nu - 0.5) / 0.32);
+    text.style.opacity   = String(Math.max(0, 1 - bort));
+    text.style.transform = `translateY(${-bort * 26}px)`;
+    if (rulla) rulla.style.opacity = String(Math.max(0, 1 - nu * 5));
+    if (Math.abs(mal - nu) > 0.0005) requestAnimationFrame(rita); else kor = false;
+  }
+
+  function knuff () { mal = progress(); if (!kor) { kor = true; requestAnimationFrame(rita); } }
+  addEventListener('scroll', knuff, { passive: true });
+  addEventListener('resize', knuff);
+  video.addEventListener('loadeddata', knuff);
+  knuff();
+})();
+
+// Demon startar nar den kommer i bild och pausar nar den lamnar den.
+// Autoplay pa en 18-sekundersfilm som ingen ser ar bara bortkastad bandbredd.
+(() => {
+  const v = document.getElementById('demoVideo');
+  if (!v || !('IntersectionObserver' in window)) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  new IntersectionObserver((poster) => {
+    for (const p of poster) {
+      if (p.isIntersecting) v.play().catch(() => {}); else v.pause();
+    }
+  }, { threshold: 0.35 }).observe(v);
+})();
+</script>

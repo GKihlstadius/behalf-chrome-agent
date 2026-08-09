@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>inner</title>
+<body style="font:16px system-ui;margin:16px">
+<h2>Inner frame</h2>
+<div id="log">not clicked</div>
+<form>
+  <input name="amount" value="">
+  <textarea name="note"></textarea>
+  <input type="file" name="ledger">
+</form>
+<button value="1561" onclick="document.getElementById('log').textContent='FRAME MOUSE OK'">Transfer amount</button>
+<button value="9" onclick="document.getElementById('log').textContent='FRAME DOM OK'">Other action</button>
+</body>

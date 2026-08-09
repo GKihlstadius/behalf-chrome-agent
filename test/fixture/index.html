@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><title>fixture</title>
+<body style="font:16px system-ui;margin:24px">
+<h1>Fixture</h1>
+<div id="host"></div>
+<button id="dom" onclick="this.textContent='DOM CLICK OK'">Save now</button>
+<p id="late"></p>
+<p id="vanishing">Loading please wait</p>
+<iframe src="inner.html" name="app" style="width:620px;height:260px;border:1px solid #ccc"></iframe>
+<script>
+  const r = document.getElementById('host').attachShadow({mode:'open'});
+  r.innerHTML = '<p>Hidden inside shadow DOM</p><button id="sb">Shadow button</button>';
+  r.getElementById('sb').onclick = () => { document.title = 'SHADOW CLICK OK'; };
+  setTimeout(() => { document.getElementById('late').textContent = 'Receipt 0000000'; }, 1200);
+  setTimeout(() => { document.getElementById('vanishing').remove(); }, 900);
+</script>
+</body>
