@@ -207,6 +207,10 @@ MIT. Use it, change it, ship it.
 behalf is free and staying that way. Nothing is gated. If it saved you an
 afternoon, there is a coffee fund.
 
+**[Buy me a coffee with PayPal](https://www.paypal.com/qrcodes/managed/00f1d312-85d6-4c3f-8c85-d9def5787db6)**
+
+Or on chain:
+
 ```
 Bitcoin           bc1qf0aw36judg5qzjrf365rp9nq04nav5da8jjxzx
 Ethereum ERC-20   0x9869799157186227bA3Cc980bAE3C64E022453a0
