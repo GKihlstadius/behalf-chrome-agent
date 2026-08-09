@@ -51,7 +51,11 @@ else
   curl -fsSL "https://nodejs.org/dist/$NODE_VER/$TAR" -o "$tmp/node.tar.gz" \
     || dead "Could not download Node. Check your connection, or install Node 22+ yourself."
   tar -xzf "$tmp/node.tar.gz" -C "$tmp"
-  cp -R "$tmp/node-$NODE_VER-$OS-$ARCH/." "$DEST/node/"
+  # Only the binary. The full distribution is about 190 MB, most of it npm and
+  # C++ headers that behalf never touches.
+  mkdir -p "$DEST/node/bin"
+  cp "$tmp/node-$NODE_VER-$OS-$ARCH/bin/node" "$DEST/node/bin/node"
+  chmod +x "$DEST/node/bin/node"
   rm -rf "$tmp"
   NODE="$DEST/node/bin/node"
   node_ok "$NODE" || dead "The downloaded Node does not run on this machine."
