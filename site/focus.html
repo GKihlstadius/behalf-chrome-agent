@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chrome silently drops synthetic mouse clicks into unfocused pages</title>
+<meta name="description" content="Your CDP click reports success at provably correct coordinates and nothing happens. The first click of a session works, so it looks like a race in your own code. It is not.">
+<meta property="og:title" content="Chrome silently drops synthetic mouse clicks into unfocused pages">
+<meta property="og:description" content="No error from CDP, from Chrome, or in the console. Here is how we found it, what does not fix it, and the one line that does.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bak:#0b0c0e;--text:#e8e6e1;--tyst:#8b8f98;--linje:#22252b;--accent:#d8f34e;
+      --serif:"Instrument Serif",Georgia,serif;--mono:"JetBrains Mono",monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bak);color:var(--text);font:17px/1.72 Inter,system-ui,sans-serif;
+     -webkit-font-smoothing:antialiased}
+.wrap{max-width:680px;margin:0 auto;padding:0 24px}
+header{padding:70px 0 0}
+.etikett{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+         text-decoration:none;display:inline-block;margin-bottom:34px}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,6vw,54px);line-height:1.08;margin:0 0 18px;
+   letter-spacing:-.01em}
+.datum{color:var(--tyst);font-size:14px;font-family:var(--mono);margin:0 0 46px}
+h2{font-family:var(--serif);font-weight:400;font-size:29px;line-height:1.2;margin:52px 0 14px}
+p{margin:0 0 20px;color:#cfd2d8}
+strong{color:var(--text);font-weight:600}
+em{font-style:italic}
+a{color:var(--accent)}
+pre{background:#101216;border:1px solid var(--linje);border-radius:8px;padding:16px 18px;overflow-x:auto;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;color:#b8bcc4;margin:0 0 22px}
+code{font-family:var(--mono);font-size:.9em;color:#b8bcc4}
+p code{background:#14171c;border:1px solid var(--linje);border-radius:4px;padding:1px 5px}
+table{width:100%;border-collapse:collapse;margin:0 0 24px;font-size:15px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--linje)}
+th{color:var(--tyst);font-weight:500;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+td.ja{color:var(--accent)}
+blockquote{margin:0 0 22px;padding:14px 20px;border-left:2px solid var(--accent);background:#101216;
+           color:var(--text)}
+blockquote p:last-child{margin:0}
+footer{border-top:1px solid var(--linje);margin:70px 0 0;padding:28px 0 80px;color:var(--tyst);font-size:15px}
+</style>
+<div class="wrap">
+<header>
+  <a class="etikett" href="/">behalf</a>
+  <h1>Chrome silently drops synthetic mouse clicks into unfocused pages</h1>
+  <p class="datum">9 August 2026</p>
+</header>
+
+<p>If you drive Chrome over the DevTools Protocol and dispatch real mouse events,
+there is a failure mode waiting for you that produces no error anywhere. Not from
+CDP. Not from Chrome. Not in the console. Your code reports a successful click at
+coordinates you can prove are correct, and the page does not react.</p>
+
+<p>The first click of a browser session works. Every click after the first
+navigation is swallowed. That asymmetry is what makes it expensive: it does not
+look like a browser behaviour, it looks like a race condition in your own code.</p>
+
+<h2>The symptom</h2>
+
+<p>We were clicking a button inside a same-origin iframe. The command reported
+success:</p>
+
+<pre>clicked "Transfer amount" (1 match, real mouse click at 98,378)</pre>
+
+<p>The button's centre, measured in the page at that moment, was at 97,377. One
+pixel of rounding. The element was visible, in the viewport, not covered, and
+<code>document.elementFromPoint</code> at that exact coordinate returned the
+button itself. Everything checked out. Nothing happened.</p>
+
+<h2>Three wrong hypotheses</h2>
+
+<p>The obvious suspect is coordinates, especially with an iframe involved, so we
+went there first and stayed too long. Iframe offset. Device pixel ratio. Scroll
+position. Page coordinates versus viewport coordinates. We measured each one and
+each one was already right.</p>
+
+<p>The thing that broke the deadlock was refusing to keep guessing and instead
+running the same click in a loop while changing one variable at a time:</p>
+
+<pre>1  navigate, click  ->  works
+2  navigate, click  ->  nothing
+3  navigate, wait 4s, click  ->  nothing
+4  navigate, evaluate something, click  ->  nothing
+5  navigate, click twice  ->  nothing</pre>
+
+<p>Only the very first attempt after the browser started worked, and clicking the
+top document instead of the iframe failed the same way. So it was not the iframe,
+not timing, and not coordinates. Something changed state at the first navigation
+and never changed back.</p>
+
+<h2>What it actually is</h2>
+
+<p>The browser window does not have operating system focus. Your terminal does.
+On a fresh window the renderer still treats the page as focused, which is why the
+first click lands. After a navigation the renderer re-evaluates, concludes the
+page is not focused, and quietly stops delivering synthetic mouse input.</p>
+
+<p>Quietly is the important word. <code>Input.dispatchMouseEvent</code> resolves
+successfully. There is no exception, no protocol error, no console warning, and
+no event listener fires.</p>
+
+<h2>What does not fix it</h2>
+
+<table>
+  <thead><tr><th>Attempt</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td><code>Page.bringToFront</code></td><td>no change</td></tr>
+    <tr><td><code>Input.setIgnoreInputEvents</code> with <code>ignore: false</code></td><td>no change</td></tr>
+    <tr><td>Waiting longer before the click</td><td>no change</td></tr>
+    <tr><td>Clicking twice</td><td>no change</td></tr>
+    <tr><td class="ja"><code>Emulation.setFocusEmulationEnabled</code></td><td class="ja">fixed</td></tr>
+  </tbody>
+</table>
+
+<h2>The fix</h2>
+
+<pre>await send('Emulation.setFocusEmulationEnabled', { enabled: true });</pre>
+
+<p>Send it when you attach to the target. The effect lasts for the session, so
+one call at connection time covers every later click. In our tests the very next
+trial passed without re-applying it.</p>
+
+<blockquote>
+  <p>If you are writing your own CDP automation and your synthetic clicks are
+  intermittently doing nothing, this is almost certainly why, and you are
+  probably about to spend an afternoon measuring coordinates that were correct
+  from the start.</p>
+</blockquote>
+
+<h2>Reproducing it</h2>
+
+<p>You need a page with a button, a browser started with
+<code>--remote-debugging-port</code>, and a terminal that has focus while you
+run it. Attach, then:</p>
+
+<pre>navigate  ->  click by dispatched mouse events  ->  assert the handler ran
+navigate  ->  click again        ->  the assert fails</pre>
+
+<p>Keep the browser window visible but unfocused. If you click into the browser
+window with your actual mouse first, the bug disappears, which is another reason
+it survives so long in a codebase: it does not reproduce while you are watching
+it closely.</p>
+
+<h2>Why this is worth writing down</h2>
+
+<p>Every agent that drives a real browser hits this eventually, because agents run
+from a terminal and the browser is never the focused window. The failure is
+silent, asymmetric and looks like your own bug, which is the worst combination a
+bug can have.</p>
+
+<p>It is one line. It cost us a day.</p>
+
+<footer>
+  Found while building <a href="https://github.com/GKihlstadius/behalf-chrome-agent">behalf</a>,
+  a small MIT-licensed command line for driving the browser you are already signed
+  in to. The fix is in <code>bin/lib.mjs</code>, and the rest of the traps are in
+  the <a href="https://github.com/GKihlstadius/behalf-chrome-agent/blob/main/FIELD-MANUAL.md">field manual</a>.
+</footer>
+</div>
+</html>
