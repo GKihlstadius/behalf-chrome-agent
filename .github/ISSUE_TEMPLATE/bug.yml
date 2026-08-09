@@ -1,0 +1,22 @@
+name: Something is broken
+description: A command does the wrong thing, or nothing
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: Output of behalf doctor
+      render: shell
+    validations: { required: true }
+  - type: textarea
+    attributes:
+      label: What you ran
+      render: shell
+    validations: { required: true }
+  - type: textarea
+    attributes:
+      label: What you expected, and what happened instead
+    validations: { required: true }
+  - type: input
+    attributes:
+      label: Operating system
+      description: Windows and Linux are implemented and unit tested but not yet run on real hardware, so those reports are especially useful.

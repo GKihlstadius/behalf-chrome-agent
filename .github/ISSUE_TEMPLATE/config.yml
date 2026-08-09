@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the field manual first
+    url: https://github.com/GKihlstadius/behalf-chrome-agent/blob/main/FIELD-MANUAL.md
+    about: Most surprises are already documented there, including the ones that cost a day
+  - name: Security issue
+    url: https://github.com/GKihlstadius/behalf-chrome-agent/security/advisories/new
+    about: This tool can act as you. Report privately, not in a public issue

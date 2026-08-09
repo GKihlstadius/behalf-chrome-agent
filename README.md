@@ -8,9 +8,14 @@
 [![Node 22+](https://img.shields.io/badge/node-22%2B-brightgreen)](https://nodejs.org)
 [![macOS Linux Windows](https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-lightgrey)](#install)
 [![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](#install)
-[![51 tests](https://img.shields.io/badge/tests-51%20against%20a%20real%20browser-brightgreen)](#tests)
+[![56 tests](https://img.shields.io/badge/tests-56%20against%20a%20real%20browser-brightgreen)](#tests)
 
-[behalf-cli.vercel.app](https://behalf-cli.vercel.app)
+[**Site**](https://behalf-cli.vercel.app) ·
+[**Field manual**](FIELD-MANUAL.md) ·
+[**How it works**](https://behalf-cli.vercel.app/hands) ·
+[**The focus bug**](https://behalf-cli.vercel.app/focus) ·
+[**Security**](SECURITY.md) ·
+[**Contributing**](CONTRIBUTING.md)
 
 ![behalf driving a real browser](docs/demo.gif)
 
@@ -159,7 +164,7 @@ behalf makes the window small and explicit rather than pretending otherwise:
 ## Tests
 
 ```sh
-test/run.sh                 # 51 checks against a real Chrome and a local fixture
+test/run.sh                 # 56 checks against a real Chrome and a local fixture
 node --test test/unit.mjs   # the parts that differ per operating system
 ```
 

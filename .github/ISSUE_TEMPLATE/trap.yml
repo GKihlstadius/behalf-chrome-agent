@@ -1,0 +1,35 @@
+name: A site defeated it
+description: A page where behalf could not do the thing, and what you found out
+labels: ["trap"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        These are the most valuable reports this project gets. The field manual
+        exists because of them.
+  - type: input
+    attributes:
+      label: What kind of site
+      description: No need to name it if it is private. "An accounting app that renders in an iframe" is enough.
+    validations: { required: true }
+  - type: textarea
+    attributes:
+      label: What you ran and what happened
+      description: The commands, and what came back. Paste the output.
+      render: shell
+    validations: { required: true }
+  - type: textarea
+    attributes:
+      label: What you tried that did not work
+      description: The failed attempts are half the value. Say what you ruled out.
+  - type: textarea
+    attributes:
+      label: What worked, if you found it
+      description: If you got past it, this becomes a manual entry with your name on it.
+  - type: checkboxes
+    attributes:
+      label: Already checked
+      options:
+        - label: "`behalf frames` to see if it is inside an iframe"
+        - label: "Both click methods, plain and `--mouse`"
+        - label: "A screenshot, in case the page is shadow DOM and the text lies"
