@@ -180,6 +180,16 @@ behalf makes that window small and explicit:
 
 **Close it when you are done.** An open control port is an open bank window.
 
+What behalf never does: it makes no network call except to `127.0.0.1`, keeps no
+logs, and sends nothing anywhere. `shot` and `pdf` default into `~/.behalf` with
+mode 0600 rather than `/tmp`, because a screenshot of a page you are signed into
+is exactly as sensitive as the session itself, and `/tmp` is readable by every
+user on the machine.
+
+Chrome's origin check on the debugging socket is left switched on. Some tooling
+disables it with `--remote-allow-origins=*` to make life easier. That check is
+what stops a web page from opening a socket to your control port, so it stays.
+
 Google blocks OAuth sign-in in debug-controlled browsers, so Google logins need
 your own clicks. Sign in once, then let behalf work in the session.
 

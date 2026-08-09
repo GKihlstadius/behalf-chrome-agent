@@ -138,7 +138,6 @@ const commands = {
     const child = spawn(chrome, [
       `--user-data-dir=${PROFILE}`,
       `--remote-debugging-port=${p}`,
-      '--remote-allow-origins=*',
       '--no-first-run', '--no-default-browser-check',
     ], { detached: true, stdio: 'ignore' });
     child.unref();
@@ -182,10 +181,13 @@ const commands = {
       return;
     }
     if (!name) { out(`usage: behalf lease <claim|release|list|mine> [name]`); process.exitCode = 1; return; }
+    // A lease name becomes a filename, so it must not be able to point anywhere else.
+    const rent = name.replace(/[^A-Za-z0-9._-]/g, '');
+    if (!rent || rent === '.' || rent === '..') { out('lease names may contain letters, digits, dot, dash and underscore'); process.exitCode = 1; return; }
     mkdirSync(LEASES, { recursive: true });
-    if (sub === 'claim')   { writeFileSync(join(LEASES, name), String(Date.now())); return out(`lease taken: ${name}`); }
-    if (sub === 'release') { forget(join(LEASES, name)); return out(`lease released: ${name}`); }
-    if (sub === 'mine')    { return out(`behalf-tab-${name}`); }
+    if (sub === 'claim')   { writeFileSync(join(LEASES, rent), String(Date.now())); return out(`lease taken: ${rent}`); }
+    if (sub === 'release') { forget(join(LEASES, rent)); return out(`lease released: ${rent}`); }
+    if (sub === 'mine')    { return out(`behalf-tab-${rent}`); }
     out('usage: behalf lease <claim|release|list|mine> [name]'); process.exitCode = 1;
   },
 
@@ -360,14 +362,19 @@ const commands = {
 
   async eval() { await withTab(async c => out(String(await c.evaluate(arg.join(' '))))); },
 
-  async shot() { const file = arg[0] || '/tmp/behalf-shot.png';
+  // Default into the private state directory, not /tmp. A screenshot of a page
+  // you are signed into is exactly as sensitive as the session itself, and /tmp
+  // is readable by every user on the machine.
+  async shot() { const file = arg[0] || join(DIR, 'shot.png');
     await withTab(async c => { const r = await c.send('Page.captureScreenshot',{format:'png'});
-      writeFileSync(file, Buffer.from(r.data,'base64')); out(file); }); },
+      mkdirSync(DIR, { recursive: true });
+      writeFileSync(file, Buffer.from(r.data,'base64'), { mode: 0o600 }); out(file); }); },
 
-  async pdf() { const file = arg[0] || '/tmp/behalf.pdf';
+  async pdf() { const file = arg[0] || join(DIR, 'page.pdf');
     await withTab(async c => { const r = await c.send('Page.printToPDF',{ printBackground:true, preferCSSPageSize:true,
       marginTop:0, marginBottom:0, marginLeft:0, marginRight:0 });
-      writeFileSync(file, Buffer.from(r.data,'base64')); out(file); }); },
+      mkdirSync(DIR, { recursive: true });
+      writeFileSync(file, Buffer.from(r.data,'base64'), { mode: 0o600 }); out(file); }); },
 
   async upload() { const [name, ...files] = arg;
     await withTab(async c => {

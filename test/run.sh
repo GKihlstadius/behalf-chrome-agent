@@ -140,6 +140,19 @@ is "upload attaches a relative path" "$("$B" eval "document.querySelector('ifram
 "$B" pdf "$T/out.pdf" >/dev/null
 [ -s "$T/out.pdf" ] && ok "pdf writes a file" || bad "pdf writes a file"
 
+# A screenshot of a signed-in page is as sensitive as the session. It must not
+# land in a world readable directory, and it must not be world readable itself.
+utfil=$("$B" shot)
+case "$utfil" in (/tmp/*) bad "shot defaults outside /tmp" "$utfil";; (*) ok "shot defaults outside /tmp";; esac
+is "shot output is 0600" "$(stat -f '%Lp' "$utfil")" "600"
+is "port file is not world readable" "$(stat -f '%Lp' "$BEHALF_DIR/.port")" "600"
+
+# A lease name becomes a filename
+out=$("$B" lease claim "../escape"); code=$?
+is "lease rejects path traversal" "$code" "0"
+[ -f "$BEHALF_DIR/../escape" ] && bad "lease cannot write outside its directory" || ok "lease cannot write outside its directory"
+"$B" lease release escape >/dev/null 2>&1
+
 # --- lease protects a shared browser ---------------------------------------
 "$B" lease claim other >/dev/null
 out=$("$B" stop); code=$?

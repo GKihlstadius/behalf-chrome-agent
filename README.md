@@ -151,6 +151,8 @@ behalf makes the window small and explicit rather than pretending otherwise:
 - A separate Chrome profile, so your everyday browser is untouched
 - `behalf stop` closes the port and nothing keeps running
 - `behalf start 90` shuts itself down if you walk away and forget
+- No network calls except to `127.0.0.1`, no logs, nothing sent anywhere
+- Screenshots and PDFs default into `~/.behalf` with mode 0600, not `/tmp`
 
 **Close it when you are done.** An open control port is an open bank window.
 
