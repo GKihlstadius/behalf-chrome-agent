@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How to Give an AI Agent Hands in a Real Browser Without Losing a Day to Silent Failures</title>
+<meta name="description" content="Drive the browser you are already signed into, and handle the four failure modes that make people call browser automation unreliable.">
+<meta property="og:title" content="How to Give an AI Agent Hands in a Real Browser Without Losing a Day to Silent Failures">
+<meta property="og:description" content="The architecture, the three commands that carry the weight, and the silent failure that costs a day.">
+<meta property="og:image" content="https://behalf-cli.vercel.app/assets/hands.jpg">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bak:#0b0c0e;--text:#e8e6e1;--tyst:#8b8f98;--linje:#22252b;--accent:#d8f34e;
+      --serif:"Instrument Serif",Georgia,serif;--mono:"JetBrains Mono",monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bak);color:var(--text);font:17px/1.72 Inter,system-ui,sans-serif;
+     -webkit-font-smoothing:antialiased}
+.wrap{max-width:680px;margin:0 auto;padding:0 24px}
+header{padding:70px 0 0}
+.etikett{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+         text-decoration:none;display:inline-block;margin-bottom:34px}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,6vw,54px);line-height:1.08;margin:0 0 18px;
+   letter-spacing:-.01em}
+.datum{color:var(--tyst);font-size:14px;font-family:var(--mono);margin:0 0 46px}
+h2{font-family:var(--serif);font-weight:400;font-size:29px;line-height:1.2;margin:52px 0 14px}
+p{margin:0 0 20px;color:#cfd2d8}
+strong{color:var(--text);font-weight:600}
+em{font-style:italic}
+a{color:var(--accent)}
+pre{background:#101216;border:1px solid var(--linje);border-radius:8px;padding:16px 18px;overflow-x:auto;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;color:#b8bcc4;margin:0 0 22px}
+code{font-family:var(--mono);font-size:.9em;color:#b8bcc4}
+p code{background:#14171c;border:1px solid var(--linje);border-radius:4px;padding:1px 5px}
+table{width:100%;border-collapse:collapse;margin:0 0 24px;font-size:15px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--linje)}
+th{color:var(--tyst);font-weight:500;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+td.ja{color:var(--accent)}
+blockquote{margin:0 0 22px;padding:14px 20px;border-left:2px solid var(--accent);background:#101216;
+           color:var(--text)}
+blockquote p:last-child{margin:0}
+footer{border-top:1px solid var(--linje);margin:70px 0 0;padding:28px 0 80px;color:var(--tyst);font-size:15px}
+</style>
+<style>.bild{width:100%;border-radius:10px;border:1px solid var(--linje);margin:0 0 44px;display:block}
+.wrap{max-width:700px}</style>
+<div class="wrap">
+<header>
+  <a class="etikett" href="/">behalf</a>
+  <h1>How to Give an AI Agent Hands in a Real Browser Without Losing a Day to Silent Failures</h1>
+  <p class="datum">9 August 2026</p>
+</header>
+<img class="bild" src="/assets/hands.jpg" alt="A hand of light against a pane of dark glass">
+<p>Your agent can read the whole internet and cannot click a single button in your own account.</p>
+<p>That gap is where most people stop. They wire up a headless browser, discover it knows nothing about them, and go back to copying values out of a dashboard by hand while the agent watches. The work that would actually save time, the invoice that needs importing, the portal that has no API, the report that only exists behind a login, stays manual forever.</p>
+<p>The fix is not a better scraper. It is driving the browser you are already signed into, and then handling the four specific failure modes that make everyone who tries it once give up and call browser automation unreliable.</p>
+<p>This is the complete build. By the end you will know the architecture, the three commands that carry most of the weight, and the exact silent failure that costs people an entire day, including how to prove it is happening rather than guess.</p>
+<h2>Why A Fresh Browser Is The Wrong Answer</h2>
+<p>The obvious approach is to launch a clean browser and drive that. Playwright, Puppeteer, any of them. It works beautifully in a demo and fails on everything that matters.</p>
+<p>A fresh browser has no cookies, no session, no device trust. So the first thing your automation meets is a login form, and behind that a second factor, and behind that a device verification email. You now have a system that needs your password stored somewhere, your one-time codes intercepted somehow, and a fingerprint that most banks and government portals will flag on sight.</p>
+<p>You have not automated the task. You have built a machine that has to defeat your own security to do the task, and every one of those defeats is a thing that breaks silently the next time the provider changes something.</p>
+<p>The alternative is to stop trying to become you and simply borrow the session where you already are you. A browser started with a remote debugging port exposes a control channel. Your agent attaches to that channel and acts inside a session that is already authenticated, already trusted, already past every factor.</p>
+<p>No credentials in config. No codes to intercept. Nothing to defeat.</p>
+<h2>The Shape Of A Safe Setup</h2>
+<p>That control channel has no authentication of any kind. Anything running as your user can connect to it and act as you everywhere you are signed in. This is not a reason to avoid the approach. It is a reason to be deliberate about four things.</p>
+<p><strong>A separate browser profile.</strong> Not your daily browser. A profile you sign into deliberately, for the accounts this agent is allowed to touch, so the blast radius is a decision rather than an accident.</p>
+<p><strong>A random port every time, bound to loopback only.</strong> A fixed, well known port is an invitation. A random port on 127.0.0.1 is not reachable from the network at all.</p>
+<p><strong>An explicit close.</strong> The channel should be something you open for a task and close when it is done, not a daemon that lives forever because it was convenient once.</p>
+<p><strong>A timer you cannot forget.</strong> The failure mode is not malice, it is walking away. Start it with a lifetime and let it shut itself down.</p>
+<pre>start 90        random port, closes itself after 90 minutes
+open &lt;url&gt;
+...
+stop            closes the port. Do this.</pre>
+<p>If you take nothing else from this piece: an open control port is an open bank window. Treat closing it as part of the task, not as cleanup.</p>
+<h2>Wait For State, Not For Time</h2>
+<p>The single highest leverage habit in browser automation, and the one most people skip because a sleep is easier to type.</p>
+<p>Every fixed delay in a script is a race waiting to be lost. Too short and it breaks on a slow morning. Too long and every run pays for the worst case. Worse, when it does break, it breaks intermittently, which sends you looking for a bug in your logic when the actual problem is that the page needed 300 more milliseconds.</p>
+<pre>wait &quot;Receipt&quot;
+found after 412 ms</pre>
+<p>Poll for the condition instead. Wait for the text that proves the page reached the state you need, and let it tell you how long it took. When something genuinely hangs, you get a timeout with a clear message rather than a script that continued into a page that was not ready.</p>
+<p>Use it after every action that changes the page. Not sometimes. Every one.</p>
+<h2>There Are Two Ways To Click And No Rule About Which Works</h2>
+<p>This is where most people conclude that browser automation is flaky.</p>
+<p>A DOM click calls the element&#x27;s own click method. It is cheap, it works through the page&#x27;s own event system, and it works on most modern web applications.</p>
+<p>A real mouse click scrolls the element into view, reads its position, and dispatches actual mouse events through the browser&#x27;s input layer, the same path a physical mouse takes.</p>
+<p>Neither one is correct. They fail in opposite directions, and you cannot predict which you will need.</p>
+<p>An old government portal built on server rendered forms ignored DOM clicks completely and required real mouse events. A modern accounting application did the exact opposite: real mouse clicks on verified correct coordinates did nothing, while a DOM click on the same element worked instantly.</p>
+<p>So build both, try the cheap one first, and fall back. If neither works, the element is probably inside a sandboxed frame that JavaScript cannot reach at all, and you need to click a raw coordinate, which goes through the input layer and lands in any frame.</p>
+<p>The reason to internalise this is that the failure gives you nothing. The click reports success. The page does nothing. If you have only implemented one method, you will spend that time looking for the bug in your selector.</p>
+<h2>The Silent Failure That Costs A Day</h2>
+<p>This is the part worth the whole article, because it is invisible and it looks exactly like your own bug.</p>
+<p><strong>Chrome silently drops synthetic mouse clicks into a page it considers unfocused.</strong></p>
+<p>Your terminal has the operating system focus, not the browser. On a freshly opened window the renderer still treats the page as focused, so your first click lands. After the first navigation the renderer re-evaluates, decides the page is not focused, and stops delivering synthetic mouse input.</p>
+<p>No error is raised. Not from the protocol, not from the browser, not in the console. The call resolves successfully. No listener fires. The click reports a coordinate you can independently verify is dead centre on the button.</p>
+<p>The asymmetry is what makes it so expensive. The first click of a session works. So when later clicks stop landing, it does not read as a browser behaviour, it reads as a race condition in your own code, and you go looking in exactly the wrong place.</p>
+<p>I verified the coordinates three separate times before accepting they had been right the whole way through. Iframe offset, device pixel ratio, scroll position, page versus viewport coordinates. All measured. All already correct.</p>
+<p>What broke the deadlock was refusing to keep guessing and running the same click in a loop, changing exactly one variable per iteration:</p>
+<pre>navigate, click                    -&gt; works
+navigate, click                    -&gt; nothing
+navigate, wait 4s, click           -&gt; nothing
+navigate, evaluate something, click -&gt; nothing
+navigate, click twice              -&gt; nothing</pre>
+<p>Only the first attempt after browser start worked, and clicking the top level document failed the same way as clicking inside the frame. Not the iframe. Not timing. Not coordinates. Something changed state at the first navigation and never changed back.</p>
+<p>Here is what does not fix it:</p>
+<pre>Page.bringToFront                        no change
+Input.setIgnoreInputEvents ignore:false  no change
+waiting longer                           no change
+clicking twice                           no change</pre>
+<p>Here is what does:</p>
+<pre>await send(&#x27;Emulation.setFocusEmulationEnabled&#x27;, { enabled: true });</pre>
+<p>Send it once when you attach. The effect lasts the session, so every later click is covered by that single call.</p>
+<p>There is one more detail that explains why this survives so long in a codebase. It only reproduces while the browser window is unfocused. The moment you click into the window to watch it happen, it stops happening. A bug that hides while you observe it is how one line costs a day.</p>
+<h2>Where The Page Hides From You</h2>
+<p>Two structures will make a page look empty or unclickable when it is neither.</p>
+<p><strong>Iframes.</strong> Many business applications render their entire interface inside a frame. Reading the page text works, because text extraction can walk into a same origin frame. Clicking does not, because your selector is running against the top document where the button does not exist. You need to target the frame&#x27;s document explicitly. Cross origin frames cannot be reached from JavaScript at all, which is worth detecting up front so you stop trying.</p>
+<p><strong>Shadow DOM.</strong> Portals built from web components return almost nothing from the top level text. One government portal returned the single phrase &quot;Start of e-service&quot; while displaying a complete form on screen. Your extraction has to walk through shadow roots deliberately, or you will conclude the page failed to load.</p>
+<p>The practical rule: when a page looks empty but clearly is not, take a screenshot before you trust any text you extracted. The screenshot is ground truth. The text is an interpretation.</p>
+<h2>One More Trap, Because It Is The Expensive Kind</h2>
+<p>Uploading a file is not submitting it.</p>
+<p>Both authorities I tested against accept a file, show a confirmation for the transfer, and then wait for a separate signature before anything is actually filed. A workflow that ends when the upload succeeds has submitted nothing at all, while reporting complete success.</p>
+<p>Read the confirmation text. Look for a second step. This is the failure mode that does not surface until a deadline has passed.</p>
+<p>While we are here: filenames can matter more than you expect. One upload required two files where the first contained a line naming the second by exact filename. Renaming either one failed with no useful error.</p>
+<h2>Test It Before You Trust It</h2>
+<p>Run these deliberately before you point any of this at something that matters. Most setups that fail in real use would have failed one of these immediately.</p>
+<p><strong>The unfocused test.</strong> Run your clicks with the browser window visible but not focused, which is how it will always run in practice. If you only ever tested with the window focused, you have not tested the thing described above.</p>
+<p><strong>The second navigation test.</strong> Navigate, act, navigate again, act again. A surprising number of failures only appear on the second cycle, because the first one runs against fresh state.</p>
+<p><strong>The empty page test.</strong> Point your text extraction at a page built from web components. If it returns almost nothing while the screenshot shows a full interface, your extraction is not walking shadow roots.</p>
+<p><strong>The wrong element test.</strong> Search for text that appears on several elements. Does your click pick a sensible one, or the first one in document order that happens to be an invisible container.</p>
+<p><strong>The did-it-actually-submit test.</strong> After any upload or form submission, assert on the confirmation the service gives you, not on the fact that your own command returned successfully.</p>
+<h2>What This Adds Up To</h2>
+<p>Nineteen commands, under seven hundred lines, and one line of protocol call that took a day to find.</p>
+<p>The commands are the easy part. Anyone can send a click. Knowing which click to send, and being able to tell the difference between a page that ignored you and a browser that never delivered your input, is the part that took the time.</p>
+<p>I put all of it, including the field manual with every trap I hit, on GitHub under MIT. It is free because the alternatives from Google, Microsoft and Vercel are free, and pretending otherwise would waste your time and mine.</p>
+<p><a href="https://github.com/GKihlstadius/behalf-chrome-agent">github.com/GKihlstadius/behalf-chrome-agent</a></p>
+<p>The write-up of the focus bug on its own, if that is the only part you need:</p>
+<p><a href="/focus">behalf-cli.vercel.app/focus</a></p>
+<footer>
+  Everything here is in <a href="https://github.com/GKihlstadius/behalf-chrome-agent">behalf</a>, MIT licensed.
+  The focus bug on its own is written up <a href="/focus">here</a>.
+</footer>
+</div>
+</html>
